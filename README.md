@@ -4,3 +4,4 @@
 ![image](https://github.com/hertless2333/Train-ticket-inquiry-in-12306/blob/master/imag/Input.png)
 # 输出界面
 ![image](https://github.com/hertless2333/Train-ticket-inquiry-in-12306/blob/master/imag/Output.png)
+# 监控效果
