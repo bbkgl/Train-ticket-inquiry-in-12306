@@ -49,6 +49,7 @@ class Query(ParseStationName):   #继承查询城市代号类，便于修改url
 
     #解析12306的异步加载，拿到关键信息
     def result(self):
+        requests.packages.urllib3.disable_warnings()           # 12306网站本身没有得到认证，防止提醒认证的warning
         headers = {
             'user-agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) '
                           'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/45.0.2454.101 Safari/537.36'
@@ -63,27 +64,32 @@ class Query(ParseStationName):   #继承查询城市代号类，便于修改url
 
     # 根据信息查找到对应的车次，保存信息
     def search(self):
-        result = self.result()
         train_infor = ''
-        while train_infor == '':
-            print('\r开始监控啦，每3s发送一次查票请求，请耐心等待，当前时间{}'.format(time.ctime()), end='')
-            for car in result:
-                cars = car.split('|')
-                # 如果这趟车的这个席位存在，则打印信息发送邮件并退出监控循环
-                if cars[self.way] != '无' and cars[self.way] != '' and cars[-33] == self.train:
-                    print("\n有票啦有票啦\n车次余票信息：")
-                    print(cars[-33] + ':' + cars[self.way])
-                    train_infor = '车次：' + cars[-33] + '\n' + '余票：' + cars[self.way]
-                    break
-            time.sleep(3)
+        count = 0
+        while train_infor == '':                # 这里的循环使得查询程序一直进行
+            try:                                # 防止因为网络报错使得程序终止
+                result = self.result()
+                print('\r开始监控啦（次数：{}），每3s发送一次查票请求，请耐心等待，当前时间{}'.format(count, time.ctime()), end='')
+                for car in result:
+                    cars = car.split('|')
+                    # 如果这趟车的这个席位存在，则打印信息发送邮件并退出监控循环
+                    if cars[self.way] != '无' and cars[self.way] != '' and cars[-33] == self.train:
+                        print("\n有票啦有票啦\n车次余票信息：")
+                        print(cars[-33] + ':' + cars[self.way])
+                        train_infor = '车次：' + cars[-33] + '\n' + '余票：' + cars[self.way]
+                        break
+                time.sleep(3)                   # 访问速度太快会一直报错
+                count += 1
+            except:
+                train_infor = ''
         return train_infor
 
 # 发送邮件
 class Email_train():
     def __init__(self, text):
-        self.my_sender = '1248703394@qq.com'  # 发件人邮箱账号
-        self.my_pass = '*****'  # 发件人邮箱密码(当时申请smtp给的口令)
-        self.my_user = '********'  # 收件人邮箱账号，我这边发送给自己
+        self.my_sender = '******@qq.com'   # 发件人邮箱账号
+        self.my_pass = '**********'      # 发件人邮箱密码(当时申请smtp给的口令)
+        self.my_user = 'h*********'  # 收件人邮箱账号，我这边发送给自己
         self.text = text + '\n有票啦有票啦！\n不客气！'
 
     def mail(self):
@@ -109,8 +115,8 @@ if __name__ == "__main__":
     from_city = '长沙'
     to_city = '徐州'
     date = '2017-10-18'
-    way_of_train = '软卧'          
-    train = 'Z168'
+    way_of_train = '二等座'
+    train = 'G1848'
     q = Query(from_city, to_city, date, way_of_train, train)
     info = q.search()
     email = Email_train(info)
